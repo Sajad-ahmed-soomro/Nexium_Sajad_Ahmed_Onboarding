@@ -1,0 +1,43 @@
+# Node
+node_modules/
+.pnpm-debug.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.example.local  # keep .env.example but ignore accidental secrets
+
+# OS/system files
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# VS Code
+.vscode/
+
+# Prisma
+prisma/dev.db
+prisma/migrations/
+
+# Next.js or Vite (if added later)
+.next/
+out/
+dist/
+
+# n8n local config (if using locally)
+.n8n/
+
+# Supabase CLI (if used locally)
+.supabase/
+
+# Others
+coverage/
+
