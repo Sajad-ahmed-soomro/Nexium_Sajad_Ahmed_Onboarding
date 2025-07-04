@@ -1,12 +1,13 @@
+"use client"
+
 import Image from "next/image";
-import AboutPage from "./about/page";
+import ClientForm from "@/components/ClientForm"
 
 
 export default function Home() {
   return (
       <>
-        <div>Home Page</div>
-        <AboutPage/>
+        <ClientForm/>
       </>
     );
 }
