@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { quotesData } from "./quote"
 import { useState } from "react"
+import { quotelessJson } from "zod/v3"
 
 const formSchema = z.object({
   topic: z.string().min(1, "Topic is required"),
@@ -24,6 +25,7 @@ const formSchema = z.object({
 
 export default function ClientForm() {
   const [quotes,setQuotes]=useState([])
+  const [submit,setSubmit]=useState(false);
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -32,11 +34,10 @@ export default function ClientForm() {
   })
 
   const onSubmit = (data) => {
-    console.log("Topic:", data.topic)
     const topic=data.topic.toLowerCase();
     const filtered=quotesData.filter((quote)=>quote.topic.toLowerCase().includes(topic));
     setQuotes(filtered)
-
+    setSubmit(true)
 
   }
 
@@ -60,15 +61,22 @@ export default function ClientForm() {
         <Button type="submit">Generate</Button>
       </form>
     </Form>
-          {quotes.length>0 && (
-            <div className="mt-6 space-y-4">
-              {quotes.map((quote,index)=>(
-                <blockquote className="border-l-4 border-blue-500 pl-4 italic" key={index}> “{quote.text}”
-                  <div className="text-sm mt-1 text-right">{quote.author}</div>
+        {submit && (
+          <div className="mt-6 space-y-4">
+            {quotes.length> 0 ?(
+              quotes.slice(0,3).map((quote,index)=>
+                <blockquote key={index} className="border-l-4 border-blue-500 pl-4 italic">
+                   “{quote.text}”
+                   <div className="text-sm mt-1 text-right">{quote.author}</div>
                 </blockquote>
-              ))}
-            </div>
-          )}
+
+              )
+            ):(
+              <p className="text-gray-500 italic">No quote found on this topic</p>
+            )}
+          </div>
+        )}
+          
     </div>
   )
 }
