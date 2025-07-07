@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "Quote Generator",
-  description: "Next.js App Quote Generator",
+  description: "Next.js App Quote Generator Assignment01 Nexium",
 };
 
 export default function RootLayout({ children }) {
