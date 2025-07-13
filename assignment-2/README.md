@@ -109,17 +109,6 @@ Then go to [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 🖼️ Screenshots (optional)
-
-You can insert screenshots here:
-
-```
-![Main Page](public/images/screenshot1.png)
-![Result Page](public/images/screenshot2.png)
-```
-
----
-
 ## 📄 License
 
 This project is licensed under the **MIT License**.
