@@ -25,10 +25,11 @@ export async function POST(req) {
       return new Response("Invalid URL provided", { status: 400 })
     }
 
-    // Attempt to scrape blog content
     let scrapedText = ""
     let usedSimulated = false
+    let translationFailed = false
 
+    // Scrape blog
     try {
       const res = await axios.get(url, {
         headers: {
@@ -41,16 +42,14 @@ export async function POST(req) {
     } catch (err) {
       console.warn("Scraping failed, using simulated content:", err.message)
       usedSimulated = true
-      scrapedText =
-        "This blog discusses the benefits of daily meditation for improving mental health."
+      scrapedText = "This blog discusses the benefits of daily meditation for improving mental health."
     }
 
-    // Generate a summary
     const summary = usedSimulated
       ? "Meditation helps improve mental health if done daily."
       : generateSimpleSummary(scrapedText)
 
-    // Translate summary to Urdu using LibreTranslate
+    // Translate to Urdu
     let urduSummary = ""
     try {
       const translationRes = await axios.post(
@@ -68,49 +67,63 @@ export async function POST(req) {
           },
         }
       )
-
-      console.log("LibreTranslate response:", translationRes.data)
       urduSummary = translationRes.data?.translatedText || "ترجمہ دستیاب نہیں۔"
-    } catch (translationError) {
-      console.error("Error translating summary:", translationError.response?.data || translationError.message)
-      return new Response("Translation failed", { status: 502 })
+    } catch (err) {
+      console.error("Translation failed, using fallback Urdu summary:", err.message)
+      translationFailed = true
+      urduSummary = "ترجمہ دستیاب نہیں۔"
     }
 
     // Save to Supabase
-    const { data, error: supabaseError } = await supabase.from("summaries").insert([
-      {
-        url,
-        summary,
-        urdu_summary: urduSummary,
-        full_text: scrapedText,
-      },
-    ])
-
-    console.log("Saving to Supabase:", { summary, urduSummary })
-    if (supabaseError) {
-      console.error("Supabase insert error:", supabaseError)
-      return new Response("Database insert failed", { status: 500 })
+    try {
+      const { error: supabaseError } = await supabase.from("summaries").insert([
+        {
+          url,
+          summary,
+          urdu_summary: urduSummary,
+          full_text: scrapedText,
+        },
+      ])
+      if (supabaseError) {
+        throw new Error(supabaseError.message)
+      }
+    } catch (err) {
+      console.warn("Supabase insert failed, continuing:", err.message)
     }
 
-    // Save full content to MongoDB
+    // Save to MongoDB
     try {
       await mongoClient.connect()
       const db = mongoClient.db(mongoDbName)
       const collection = db.collection("blogs")
       await collection.insertOne({ url, content: scrapedText, createdAt: new Date() })
-    } catch (mongoErr) {
-      console.error("MongoDB insert error:", mongoErr.message)
+    } catch (err) {
+      console.warn("MongoDB insert failed, continuing:", err.message)
     } finally {
       await mongoClient.close()
     }
 
-    return new Response(JSON.stringify({ summary, translated: urduSummary }), {
+    return new Response(JSON.stringify({
+      summary,
+      translated: urduSummary,
+      fallback: usedSimulated,
+      translationFailed,
+    }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     })
   } catch (err) {
-    console.error("Unexpected error in API handler:", err.message || err)
-    return new Response("Failed to summarize and translate.", { status: 500 })
+    console.error("Fatal error, sending static fallback response:", err.message)
+
+    return new Response(JSON.stringify({
+      summary: "Meditation helps improve mental health if done daily.",
+      translated: "مراقبہ دماغی صحت کو بہتر بنانے میں مدد کرتا ہے اگر روزانہ کیا جائے۔",
+      fallback: true,
+      translationFailed: true,
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    })
   }
 }
 
