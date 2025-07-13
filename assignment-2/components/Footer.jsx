@@ -2,6 +2,8 @@
 
 import React from "react"
 import Image from "next/image"
+import { FaLinkedin, FaGithub } from "react-icons/fa"
+
 
 const Footer = () => {
   return (
@@ -10,8 +12,9 @@ const Footer = () => {
       className="mt-20 bg-transparent py-10 text-white px-6"
     >
       {/* Contact GIF centered */}
-      <div className="flex justify-center mb-20">
-              <Image
+      <div className="flex flex-col items-center mb-10">
+      <div className="flex justify-center mb-10">
+        <Image
           src="/images/contact.gif"
           alt="Contact GIF"
           width={400}
@@ -21,13 +24,8 @@ const Footer = () => {
         />
       </div>
 
-      {/* Footer Text aligned to left */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-left mt-10">
-        <p className="text-sm">
-          © 2025 Blog Summariser. All rights reserved.
-        </p>
-        <p className="text-sm">
-          Contact:{" "}
+      <p>
+          <span className="font font-semibold">Contact:{" "}</span>
           <a
             href="mailto:sajadahmedsoomro321@gmail.com"
             className="underline hover:text-blue-400 transition-colors"
@@ -35,7 +33,38 @@ const Footer = () => {
             sajadahmedsoomro321@gmail.com
           </a>
         </p>
+        </div>
+
+      <div className="flex flex-col sm:flex-row  items-center justify-between gap-4 text-sm">
+        
+      <p className="text-xs text-center">
+        © 2025 Blog Summariser. All rights reserved.
+      </p>
+        <div className="flex gap-4 mr-6">
+          <a
+            href="https://github.com/Sajad-ahmed-soomro"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-400 transition-colors"
+            aria-label="GitHub"
+          >
+            <FaGithub size={24} />
+          </a>
+          <a
+            href="https://www.linkedin.com/in/sajad-ahmed/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-400 transition-colors"
+            aria-label="LinkedIn"
+          >
+            <FaLinkedin size={24} />
+          </a>
+        </div>
+
+      {/* Copyright */}
+     
       </div>
+
     </footer>
   )
 }
