@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Head from "next/head";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Blog Summariser",
-  description: "Blog summariser which sumarise blogs and then translate into Urdu",
+  description: "Blog summariser which summarises blogs and translates into Urdu",
 };
 
 export default function RootLayout({ children }) {
