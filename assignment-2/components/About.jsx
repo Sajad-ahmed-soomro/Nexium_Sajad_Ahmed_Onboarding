@@ -12,7 +12,7 @@ const About = () => {
     >
       <div className="max-w-5xl w-full text-center md:text-left">
         <h1 className="text-4xl md:text-5xl font-extrabold mb-10 text-white leading-tight">
-          About <span className="text-blue-400">Blog Summariser</span>
+          About <span className="text-blue-400">Blog Summarizer</span>
         </h1>
 
         <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-12">

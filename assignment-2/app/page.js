@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar"
 import About from "@/components/About"
 import Footer from "@/components/Footer"
 import { useState } from "react"
+import Typewriter from "typewriter-effect"
 
 export default function Home() {
   const [url, setUrl] = useState("")
@@ -52,7 +53,20 @@ export default function Home() {
       <Navbar />
       <div className="flex items-center justify-center mt-[7.0rem] px-4">
         <div className="flex flex-col items-center px-5 py-4 max-w-xl w-full">
-          <h1 className="text-4xl font-bold text-center text-white mb-[2.0rem]">Blog Summariser</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold mb-10 text-white leading-tight">
+          <span className="block">Summarize any</span>
+          <span className="block text-blue-400">
+            <Typewriter
+              options={{
+                strings: ["blog", "paragraph", "essay"],
+                autoStart: true,
+                loop: true,
+                delay: 75,
+                deleteSpeed: 50,
+              }}
+            />
+          </span>
+        </h1>
 
           <input
             className="mb-[1.2rem] px-4 py-[0.6rem] w-full max-w-md bg-transparent border border-white placeholder:text-white text-white focus:outline-none focus:ring-2 focus:ring-white transition"
