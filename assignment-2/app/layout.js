@@ -21,7 +21,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`bg-[hsl(262_83%_60%)] text-white min-h-screen font-sans ${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`bg-[hsl(262_83%_60%)] text-white min-h-screen font-sans ${geistSans.variable} ${geistMono.variable} antialiased scroll-smooth`}
       >
         {children}
       </body>
