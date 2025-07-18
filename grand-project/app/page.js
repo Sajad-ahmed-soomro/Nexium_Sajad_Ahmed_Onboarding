@@ -1,9 +1,26 @@
 "use client";
+import Link from "next/link";
 import { motion } from "framer-motion";
 
-const Home=()=> {
+const Home = () => {
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 text-gray-800">
+      {/* Navbar */}
+      <nav className="flex justify-between items-center py-4 px-8 bg-white/80 backdrop-blur shadow sticky top-0 z-50">
+        <div className="text-2xl font-bold text-indigo-600">MindTrack</div>
+        <div className="space-x-4">
+          <Link href="/" className="text-gray-700 hover:text-indigo-600 transition">
+            Home
+          </Link>
+          <Link href="/about" className="text-gray-700 hover:text-indigo-600 transition">
+            About
+          </Link>
+          <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+            Login
+          </button>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center text-center px-6 py-24">
         <motion.h1
@@ -61,6 +78,6 @@ const Home=()=> {
       </section>
     </main>
   );
-}
+};
 
 export default Home;
