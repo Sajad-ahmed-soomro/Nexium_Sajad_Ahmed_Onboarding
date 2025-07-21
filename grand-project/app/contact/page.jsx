@@ -42,10 +42,10 @@ const ContactPage = () => {
           {/* Form + Contact Icons */}
           <div className="w-full max-w-md">
             <div className="flex justify-center gap-6 text-indigo-600 text-2xl mb-6">
-              <a href="mailto:support@mindtrack.com" className="hover:text-indigo-800">
+              <a href="mailto:sajadahmedsoomro321@gmail.com" className="hover:text-indigo-800">
                 <MdEmail />
               </a>
-              <a href="tel:+1234567890" className="hover:text-indigo-800">
+              <a href="tel:+923093637262" className="hover:text-indigo-800">
                 <MdPhone />
               </a>
             </div>

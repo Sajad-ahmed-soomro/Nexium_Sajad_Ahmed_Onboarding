@@ -36,9 +36,11 @@ const Home = () => {
           A safe space to reflect, grow, and monitor your mental health journey.
         </p>
         <div className="flex gap-4">
+          <Link href="/login">
           <button className="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition">
             Get Started
           </button>
+          </Link>
           <button className="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-100 transition">
             Learn More
           </button>
