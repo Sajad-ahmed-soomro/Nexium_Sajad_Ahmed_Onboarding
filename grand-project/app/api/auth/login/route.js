@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -7,11 +6,28 @@ const supabase = createClient(
 );
 
 export async function POST(req) {
-  const { email } = await req.json();
+  try {
+    const { email } = await req.json();
 
-  const { error } = await supabase.auth.signInWithOtp({ email });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/get-started`, // This will redirect back to your app after login
+      },
+    });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 400,
+      });
+    }
 
-  return NextResponse.json({ message: "Magic link sent!" });
+    return new Response(JSON.stringify({ message: 'Magic link sent!' }), {
+      status: 200,
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'Something went wrong' }), {
+      status: 500,
+    });
+  }
 }

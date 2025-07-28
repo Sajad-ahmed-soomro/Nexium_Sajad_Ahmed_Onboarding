@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { MdEmail } from "react-icons/md";
 
-const Login = () => {
+const SignUp = () => {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("");
 
@@ -64,4 +64,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SignUp;

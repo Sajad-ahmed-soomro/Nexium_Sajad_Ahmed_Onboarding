@@ -1,79 +1,163 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { MdDashboard, MdLogout } from "react-icons/md";
-
+import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import {
+  MdDashboard,
+  MdEdit,
+  MdBarChart,
+  MdLogout,
+  MdMenu,
+} from "react-icons/md";
+import Lottie from "lottie-react";
+
+import JournalAssistant from "@/components/JournalAssistant";
+import MoodLogs from "@/components/MoodLogs";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-
 const Dashboard = () => {
-  const [user, setUser] = useState(null);
+  const [animationData, setAnimationData] = useState(null);
+  const [activeSection, setActiveSection] = useState("Dashboard");
+  const [showJournal, setShowJournal] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const router = useRouter();
 
-  
+  const navItems = [
+    { name: "Dashboard", icon: <MdDashboard />, onClick: () => setActiveSection("Dashboard") },
+    { name: "Mood Logs", icon: <MdEdit />, onClick: () => setActiveSection("MoodLogs") },
+    { name: "Progress", icon: <MdBarChart />, onClick: () => setActiveSection("Progress") },
+    { name: "AI Journal", icon: <MdEdit />, onClick: () => setShowJournal(true) },
+  ];
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/signup");
+  };
+
+  const fetchProfile = async () => {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      console.error("No user session found:", userError);
+      router.push("/signup");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("name, focus")
+      .eq("id", user.id)
+      .single();
+
+    if (error) {
+      console.error("Error fetching profile:", error.message);
+    } else {
+      setProfile(data);
+      setUserId(user.id);
+    }
+  };
+
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    fetchUser();
+    fetchProfile();
+    fetch("/lottie/ComingSoon.json")
+      .then((res) => res.json())
+      .then((data) => setAnimationData(data))
+      .catch(() => console.log("Animation file not found"));
   }, []);
-  
 
   return (
-    <main className="flex min-h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-rose-100 via-purple-100 to-indigo-100">
       {/* Sidebar */}
-      <aside className="w-64 bg-indigo-600 text-white p-6 flex flex-col justify-between">
+      <aside className="md:w-64 bg-white shadow-md flex flex-col justify-between p-4 md:min-h-screen">
         <div>
-          <h2 className="text-2xl font-bold mb-8">MindTrack</h2>
-          <nav className="space-y-4">
-            <button className="flex items-center gap-2 hover:bg-indigo-700 p-2 rounded">
-              <MdDashboard /> Dashboard
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-indigo-700">MindTrack</h1>
+            <button
+              className="md:hidden text-xl"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              <MdMenu />
             </button>
+          </div>
+
+          <nav className={`space-y-2 ${menuOpen ? "block" : "hidden"} md:block`}>
+            {navItems.map((item, index) => (
+              <button
+                key={index}
+                onClick={item.onClick}
+                className={`w-full flex items-center gap-2 p-2 rounded-xl hover:bg-indigo-100 transition ${
+                  activeSection === item.name && !showJournal
+                    ? "bg-indigo-200 text-indigo-700"
+                    : ""
+                }`}
+              >
+                {item.icon}
+                {item.name}
+              </button>
+            ))}
           </nav>
         </div>
-        <button className="flex items-center gap-2 hover:bg-indigo-700 p-2 rounded">
-          <MdLogout /> Logout
+
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 p-2 rounded-xl hover:bg-red-100 text-red-600 transition"
+        >
+          <MdLogout />
+          Logout
         </button>
       </aside>
 
       {/* Main Content */}
-      <section className="flex-1 p-8">
-        <motion.h1
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-3xl font-bold mb-4"
-        >
-          Welcome back, {user?.email || "Guest"}!
-        </motion.h1>
+      <main className="flex-1 p-6 overflow-y-auto">
+        {showJournal ? (
+          <JournalAssistant onBack={() => setShowJournal(false)} userId={userId} />
+        ) : activeSection === "MoodLogs" ? (
+          <MoodLogs userId={userId} />
+        ) : activeSection === "Progress" ? (
+          <div className="text-center mt-20 text-xl font-medium text-indigo-700">
+            Weekly Progress Summary Coming Soon 🚀
+          </div>
+        ) : (
+          <div className="w-full">
+            {/* Top Welcome Message + Animation */}
+            <div className="flex flex-col md:flex-row justify-center items-center mr-10 ml-10 gap-2 md:gap-4 mb-4">
 
-        <p className="text-gray-600 mb-4">
-          Here is your daily mental health summary:
-        </p>
+              <div className="flex-1">
+                <h2 className="text-3xl font-semibold text-indigo-700 mb-2">
+                  Welcome, {profile?.name || "User"}!
+                </h2>
+                <p className="text-lg text-gray-600">
+                  Let’s focus on your{" "}
+                  <span className="font-semibold text-indigo-600">{profile?.focus}</span> today.
+                </p>
+              </div>
+              {animationData && (
+                <Lottie
+                  animationData={animationData}
+                  className="w-56 h-56 md:w-72 md:h-72"
+                  loop
+                />
+              )}
+            </div>
 
-        {/* Dashboard Cards */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-            <h3 className="text-xl font-semibold mb-2 text-indigo-600">Mood Logs</h3>
-            <p className="text-gray-600">View and reflect on your past mood entries.</p>
+            {/* Optional Additional Content */}
+            <div className="text-center text-indigo-600">
+              Select a section from the sidebar to begin tracking your journey 🌱
+            </div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-            <h3 className="text-xl font-semibold mb-2 text-indigo-600">Progress Charts</h3>
-            <p className="text-gray-600">Visualize your mood trends and insights.</p>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-            <h3 className="text-xl font-semibold mb-2 text-indigo-600">AI Suggestions</h3>
-            <p className="text-gray-600">Get personalized suggestions powered by AI.</p>
-          </div>
-        </div>
-      </section>
-    </main>
+        )}
+      </main>
+    </div>
   );
 };
 

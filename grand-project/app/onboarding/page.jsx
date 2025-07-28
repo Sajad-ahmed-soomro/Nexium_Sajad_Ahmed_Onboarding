@@ -1,38 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { MdMood, MdPsychology, MdFavorite } from "react-icons/md";
-import { useRouter } from "next/navigation";
+import { useOnboardingStore } from "../lib/store/onboardingStore";
+import { createClient } from "@supabase/supabase-js";
 
-const steps = ["name", "focus", "confirm"];
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
-const OnboardingPage = () => {
-  const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
-  const [focus, setFocus] = useState("");
-  const [loading, setLoading] = useState(false);
+export default function Onboarding() {
   const router = useRouter();
+  const { name, setName, focus, setFocus} = useOnboardingStore();
+
+  const [step, setStep] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [accessToken, setAccessToken] = useState(null);
+
+  useEffect(() => {
+    const getToken = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        setAccessToken(session.access_token);
+        console.log("Token from session:", session.access_token);
+      } else {
+        console.warn("No access token found");
+      }
+    };
+    getToken();
+  }, []);
 
   const nextStep = () => setStep((prev) => prev + 1);
 
   const handleSave = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/user/save-profile", {
-        method: "POST",
-        body: JSON.stringify({ name, focus }),
-        headers: { "Content-Type": "application/json" },
-      });
-      if (res.ok) router.push("/dashboard");
-      else console.error("Failed to save profile");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setLoading(true);
 
+    try {
+      const res = await fetch("/api/onboarding", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ name, focus: focus }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("API error:", data.error);
+        alert("Failed to save onboarding info.");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      alert("Something went wrong.");
+    }
+
+    setLoading(false);
+  };
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100 p-6">
       <motion.div
@@ -76,7 +108,11 @@ const OnboardingPage = () => {
                     setFocus(item);
                     nextStep();
                   }}
-                  className="flex items-center justify-center gap-2 border p-3 rounded hover:bg-indigo-50 transition"
+                  className={`flex items-center justify-center gap-2 border p-3 rounded transition ${
+                    focus === item
+                      ? "bg-indigo-100 border-indigo-500"
+                      : "hover:bg-indigo-50"
+                  }`}
                 >
                   {item === "Mood" && <MdMood />}
                   {item === "Anxiety" && <MdPsychology />}
@@ -106,6 +142,4 @@ const OnboardingPage = () => {
       </motion.div>
     </main>
   );
-};
-
-export default OnboardingPage;
+}
