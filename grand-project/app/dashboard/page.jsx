@@ -14,6 +14,7 @@ import Lottie from "lottie-react";
 
 import JournalAssistant from "@/components/JournalAssistant";
 import MoodLogs from "@/components/MoodLogs";
+import Trends from "@/components/Trends"; // ✅ Import Trends
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -30,9 +31,9 @@ const Dashboard = () => {
   const router = useRouter();
 
   const navItems = [
-    { name: "Dashboard", icon: <MdDashboard />, onClick: () => setActiveSection("Dashboard") },
-    { name: "Mood Logs", icon: <MdEdit />, onClick: () => setActiveSection("MoodLogs") },
-    { name: "Progress", icon: <MdBarChart />, onClick: () => setActiveSection("Progress") },
+    { name: "Dashboard", icon: <MdDashboard />, onClick: () => { setActiveSection("Dashboard"); setShowJournal(false); } },
+    { name: "Mood Logs", icon: <MdEdit />, onClick: () => { setActiveSection("MoodLogs"); setShowJournal(false); } },
+    { name: "Trends", icon: <MdBarChart />, onClick: () => { setActiveSection("Trends"); setShowJournal(false); } },
     { name: "AI Journal", icon: <MdEdit />, onClick: () => setShowJournal(true) },
   ];
 
@@ -123,15 +124,12 @@ const Dashboard = () => {
           <JournalAssistant onBack={() => setShowJournal(false)} userId={userId} />
         ) : activeSection === "MoodLogs" ? (
           <MoodLogs userId={userId} />
-        ) : activeSection === "Progress" ? (
-          <div className="text-center mt-20 text-xl font-medium text-indigo-700">
-            Weekly Progress Summary Coming Soon 🚀
-          </div>
+        ) : activeSection === "Trends" ? (
+          <Trends userId={userId} />
         ) : (
           <div className="w-full">
             {/* Top Welcome Message + Animation */}
             <div className="flex flex-col md:flex-row justify-center items-center mr-10 ml-10 gap-2 md:gap-4 mb-4">
-
               <div className="flex-1">
                 <h2 className="text-3xl font-semibold text-indigo-700 mb-2">
                   Welcome, {profile?.name || "User"}!
@@ -150,7 +148,6 @@ const Dashboard = () => {
               )}
             </div>
 
-            {/* Optional Additional Content */}
             <div className="text-center text-indigo-600">
               Select a section from the sidebar to begin tracking your journey 🌱
             </div>
