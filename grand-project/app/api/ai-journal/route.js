@@ -1,34 +1,93 @@
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// POST: Save journal entry + AI response
 export async function POST(req) {
-    const { entry } = await req.json();
-  
-    // Generate or retrieve a user-specific session ID (in production, use auth/user ID)
-    const sessionid = "user-1234";
-  
-    try {
-      const res = await fetch("http://localhost:5678/webhook-test/986a6f68-c50b-4196-8e84-34f9e0be3231", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ entry, sessionid }), // ✅ send both entry and sessionid
-      });
-  
-      if (!res.ok) {
-        throw new Error("n8n returned an error");
-      }
-  
-      const data = await res.json();
-  
-      return Response.json({
-        summary: data.summary,
-        questions: data.questions,
-      });
-    } catch (error) {
-      console.error("n8n AI error:", error);
-      return new Response(
-        JSON.stringify({ error: "Failed to generate AI journal response" }),
-        { status: 500 }
-      );
+  try {
+    const authHeader = req.headers.get('Authorization');
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Missing or invalid token' }, { status: 401 });
     }
+
+    const token = authHeader.split(' ')[1];
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseAdmin.auth.getUser(token);
+
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { entry } = await req.json();
+
+    // Get AI response from n8n
+    const aiRes = await fetch('http://localhost:5678/webhook/986a6f68-c50b-4196-8e84-34f9e0be3231', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entry, sessionid: user.id }),
+    });
+
+    if (!aiRes.ok) throw new Error('n8n webhook failed');
+
+    const { summary, questions } = await aiRes.json();
+
+    // Save everything as a single row in chat_sessions
+    const { error: insertError } = await supabaseAdmin.from('chat_sessions').insert({
+      user_id: user.id,
+      entry,
+      summary,
+      questions,
+    });
+
+    if (insertError) {
+      console.error('Supabase insert error:', insertError);
+      return NextResponse.json({ error: 'DB insert failed' }, { status: 500 });
+    }
+
+    return NextResponse.json({ summary, questions });
+  } catch (err) {
+    console.error('Error in ai-journal POST:', err);
+    return NextResponse.json({ error: 'AI processing failed' }, { status: 500 });
   }
-  
+}
+
+// GET: Retrieve all past journal sessions
+export async function GET(req) {
+  const authHeader = req.headers.get('Authorization');
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Missing or invalid token' }, { status: 401 });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabaseAdmin.auth.getUser(token);
+
+  if (userError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('chat_sessions')
+    .select('entry, summary, questions, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Supabase fetch error:', error);
+    return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
+  }
+
+  return NextResponse.json(data);
+}

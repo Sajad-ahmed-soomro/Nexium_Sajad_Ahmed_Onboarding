@@ -1,129 +1,223 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { ArrowUpRight } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 const JournalAssistant = () => {
   const [entry, setEntry] = useState('');
+  const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [summary, setSummary] = useState('');
-  const [questions, setQuestions] = useState([]);
-  const [debouncedEntry, setDebouncedEntry] = useState('');
+  const [userId, setUserId] = useState(null);
+  const chatEndRef = useRef(null);
+  const [error, setError] = useState("");
 
-  // Debounce entry to auto-submit like chat after typing stops
+
+  // ✅ Get user ID from Supabase
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) console.error('User fetch error:', error);
+      else setUserId(data?.user?.id);
+    };
+    fetchUser();
+  }, []);
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+  
+      if (!accessToken) return;
+  
+      try {
+        const res = await fetch("/api/ai-journal", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+  
+        const data = await res.json();
+        if (res.ok && Array.isArray(data)) {
+          const formatted = data.flatMap((session) => {
+            const msgs = [];
+        
+            if (session.entry) {
+              msgs.push({ type: 'user', text: session.entry });
+            }
+        
+            if (session.summary) {
+              msgs.push({ type: 'ai', text: session.summary });
+            }
+        
+            if (Array.isArray(session.questions) && session.questions.length > 0) {
+              msgs.push({
+                type: 'ai',
+                text: '💬 Reflection Questions:\n' + session.questions.map(q => `- ${q}`).join('\n'),
+              });
+            }
+        
+            return msgs;
+          });
+        
+          setMessages(formatted);
+        }
+        
+      } catch (err) {
+        console.error("Failed to load messages:", err);
+      }
+    };
+  
+    fetchMessages();
+  }, []);
+  
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   useEffect(() => {
     if (!entry.trim()) return;
     setTyping(true);
     const timeout = setTimeout(() => {
-      setDebouncedEntry(entry);
+      handleSubmit(entry.trim());
       setTyping(false);
-    }, 1200); // 1.2s pause triggers submit
+    }, 1200);
     return () => clearTimeout(timeout);
   }, [entry]);
 
-  // Auto submit when debounced entry is ready
-  useEffect(() => {
-    if (!debouncedEntry.trim()) return;
-    handleSubmit(debouncedEntry);
-  }, [debouncedEntry]);
-
   const handleSubmit = async (text) => {
+    if (!text) return;
+  
+    setMessages((prev) => [...prev, { type: 'user', text }]);
+    setEntry('');
     setLoading(true);
-    setSummary('');
-    setQuestions([]);
+    setError('');
+  
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+  
+    const accessToken = session?.access_token;
+  
+    if (!accessToken) {
+      setError("You must be logged in.");
+      setLoading(false);
+      return;
+    }
+  
     try {
       const res = await fetch('/api/ai-journal', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({ entry: text }),
       });
+  
       const data = await res.json();
-      console.log('n8n response:', data);
-      setSummary(data.summary);
-      setQuestions(Array.isArray(data.questions) ? data.questions : []);
+  
+      if (res.ok) {
+        if (data.summary) {
+          setMessages((prev) => [
+            ...prev,
+            { type: 'ai', text: data.summary },
+          ]);
+        }
+  
+        if (data.questions?.length) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              type: 'ai',
+              text:
+                '💬 Reflection Questions:\n' +
+                data.questions.map((q) => `- ${q}`).join('\n'),
+            },
+          ]);
+        }
+      } else {
+        setError(data.error || "Failed to generate response.");
+      }
     } catch (error) {
       console.error('AI Error:', error);
+      setError("Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
-    <div className="max-w-3xl mx-auto p-4 space-y-6">
-      <motion.h2
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-2xl font-semibold text-center"
-      >
+    <div className="max-w-2xl mx-auto flex flex-col h-[80vh] border rounded-xl shadow bg-white overflow-hidden">
+      <div className="bg-blue-100 px-4 py-3 font-semibold text-center">
         How are you feeling today?
-      </motion.h2>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="bg-white p-4 rounded-xl shadow border"
+      {/* Chat Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`max-w-[80%] p-3 rounded-xl whitespace-pre-wrap shadow ${
+              msg.type === 'user'
+                ? 'bg-blue-500 text-white self-end ml-auto'
+                : 'bg-gray-100 text-gray-800 self-start mr-auto'
+            }`}
+          >
+            {msg.text}
+          </div>
+        ))}
+
+        {loading && (
+          <div className="bg-gray-100 p-3 rounded-xl shadow w-fit text-sm text-gray-600">
+            AI is thinking...
+          </div>
+        )}
+
+        {typing && (
+          <div className="text-gray-400 text-sm italic">Typing...</div>
+        )}
+
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Input + Send Button */}
+      <form
+        className="flex items-center border-t px-4 py-2 gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit(entry.trim());
+        }}
       >
         <textarea
-          className="w-full p-3 border rounded-xl focus:outline-none min-h-[120px]"
-          placeholder="Type your journal entry..."
+          className="flex-1 resize-none border rounded-xl p-2 focus:outline-none min-h-[48px] max-h-[120px]"
+          placeholder="Type something..."
           value={entry}
           onChange={(e) => setEntry(e.target.value)}
         />
-        {typing && (
-          <motion.p
-            className="text-sm text-gray-500 mt-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            Typing...
-          </motion.p>
-        )}
-      </motion.div>
 
-      {loading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex items-center space-x-2 bg-gray-100 rounded-xl px-4 py-3 shadow w-fit"
+        <button
+          type="submit"
+          disabled={!entry.trim()}
+          className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition"
         >
-          <span className="text-gray-600 font-medium">AI is thinking</span>
-          <motion.div
-            className="flex space-x-1"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ repeat: Infinity, duration: 1 }}
-          >
-            <span className="dot w-2 h-2 bg-gray-500 rounded-full" />
-            <span className="dot w-2 h-2 bg-gray-500 rounded-full" />
-            <span className="dot w-2 h-2 bg-gray-500 rounded-full" />
-          </motion.div>
-        </motion.div>
-      )}
-
-      {summary && (
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-blue-100 text-blue-900 p-4 rounded-xl shadow w-fit max-w-full"
-        >
-          <h3 className="font-semibold mb-1">🧠 Summary</h3>
-          <p className="whitespace-pre-wrap">{summary}</p>
-        </motion.div>
-      )}
-
-      {questions.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-green-100 text-green-900 p-4 rounded-xl shadow w-fit max-w-full"
-        >
-          <h3 className="font-semibold mb-1">💬 Reflection Questions</h3>
-          <ul className="list-disc pl-5 space-y-1">
-            {questions.map((q, i) => (
-              <li key={i}>{q}</li>
-            ))}
-          </ul>
-        </motion.div>
-      )}
+          <ArrowUpRight size={20} />
+        </button>
+      </form>
     </div>
   );
 };
