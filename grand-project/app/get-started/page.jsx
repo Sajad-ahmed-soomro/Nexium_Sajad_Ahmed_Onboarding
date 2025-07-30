@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import Lottie from "lottie-react";
-import loadingAnimation from "@/public/lottie/Loading.json"; // Adjust path as needed
+import loadingAnimation from "@/public/lottie/Loading.json"; 
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -15,43 +15,40 @@ export default function GetStartedRedirect() {
   const router = useRouter();
 
   useEffect(() => {
+    let interval = null;
+    let timeout = null;
+
     const redirectUser = async () => {
       const {
         data: { session },
-        error: sessionError,
       } = await supabase.auth.getSession();
 
-      if (sessionError || !session) {
-        console.log("No session, redirecting to signup...");
-        router.replace("/signup");
-        return;
-      }
+      if (!session) return;
 
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      console.log("User info:", user);
-
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("name, focus")
-        .eq("id", session.user.id)
+        .eq("id", user.id)
         .single();
 
-      console.log("Fetched profile:", profile);
-      console.log("Profile fetch error:", profileError);
-
       if (profileError || !profile?.name || !profile?.focus) {
-        console.log("Missing profile data, redirecting to onboarding...");
         router.replace("/onboarding");
       } else {
-        console.log("Profile complete, redirecting to dashboard...");
         router.replace("/dashboard");
       }
     };
 
-    redirectUser();
+    interval = setInterval(redirectUser, 1000);
+    timeout = setTimeout(() => clearInterval(interval), 10000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, [router]);
 
   return (
