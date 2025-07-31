@@ -73,11 +73,10 @@ export default function Dashboard() {
     const getQuote = async () => {
       try {
         const tag = profile?.focus?.toLowerCase();
-        const res = await fetch(
-          `https://api.quotable.io/random?tags=${tag || "inspirational"}`
-        );
+        const res = await fetch("https://zenquotes.io/api/random");
         const data = await res.json();
-        setDailyQuote(`${data.content} — ${data.author}`);
+        console.log(data.q)
+        setDailyQuote(`${data.q} — ${data.a}`);
       } catch (error) {
         setDailyQuote("Stay strong. You got this. 🌱");
       }

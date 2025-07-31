@@ -13,6 +13,7 @@
     "@supabase/auth-helpers-react": "^0.5.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.52.0",
+    "@upstash/redis": "^1.35.3",
     "axios": "^1.11.0",
     "framer-motion": "^12.23.6",
     "lottie-react": "^2.4.1",
