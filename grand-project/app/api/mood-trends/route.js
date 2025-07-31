@@ -1,5 +1,11 @@
+// app/api/mood-logs/route.js
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+
+// Simple in-memory cache
+const cache = new Map();
+const CACHE_TTL_MS = 1000 * 60; // 1 minute
 
 export async function GET(req) {
   const authHeader = req.headers.get("authorization");
@@ -18,10 +24,19 @@ export async function GET(req) {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      },
+      }
     }
   );
 
+  // Step 1: Check cache
+  const cached = cache.get(token);
+  const now = Date.now();
+
+  if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+    return NextResponse.json(cached.data);
+  }
+
+  // Step 2: Fetch from Supabase
   const {
     data: { user },
     error: userError,
@@ -43,6 +58,9 @@ export async function GET(req) {
       { status: 500 }
     );
   }
+
+  // Step 3: Cache the result
+  cache.set(token, { data: moodLogs, timestamp: now });
 
   return NextResponse.json(moodLogs);
 }

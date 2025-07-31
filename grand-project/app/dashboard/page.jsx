@@ -75,7 +75,7 @@ export default function Dashboard() {
         const tag = profile?.focus?.toLowerCase();
         const res = await fetch("https://zenquotes.io/api/random");
         const data = await res.json();
-        console.log(data.q)
+        console.log("quotes",ata.q)
         setDailyQuote(`${data.q} — ${data.a}`);
       } catch (error) {
         setDailyQuote("Stay strong. You got this. 🌱");
