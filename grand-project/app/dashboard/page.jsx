@@ -7,6 +7,7 @@ import {
   MdDashboard,
   MdEdit,
   MdBarChart,
+  MdPsychology,
   MdLogout,
   MdMenu,
 } from "react-icons/md";
@@ -112,7 +113,7 @@ export default function Dashboard() {
     },
     {
       name: "AI Journal",
-      icon: <MdEdit />,
+      icon: <MdPsychology />,
       onClick: () => {
         setShowJournal(true);
       },

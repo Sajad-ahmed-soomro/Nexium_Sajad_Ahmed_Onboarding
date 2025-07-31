@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -29,7 +30,7 @@ export async function POST(req) {
     const { entry } = await req.json();
 
     // Get AI response from n8n
-    const aiRes = await fetch('http://localhost:5678/webhook/986a6f68-c50b-4196-8e84-34f9e0be3231', {
+    const aiRes = await fetch(process.env.AI_HEALTH_ASSISTANT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entry, sessionid: user.id }),
