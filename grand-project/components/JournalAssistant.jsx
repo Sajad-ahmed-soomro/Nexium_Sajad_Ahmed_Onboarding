@@ -45,6 +45,7 @@ const JournalAssistant = () => {
             Authorization: `Bearer ${accessToken}`,
           },
         });
+        console.log(accessToken)
   
         const data = await res.json();
         if (res.ok && Array.isArray(data)) {
