@@ -41,7 +41,7 @@ export async function POST(req) {
 
     if (insertError) {
       console.error("❌ Insert error:", insertError.message);
-      return NextResponse.json({ error: "Failed to insert log" }, { status: 500 });
+      return NextResponse.json({ error: `Failed to insert log ${insertError.message}`}, { status: 500 });
     }
 
     console.log("✅ Mood log inserted successfully");
