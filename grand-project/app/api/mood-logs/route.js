@@ -1,11 +1,5 @@
-// app/api/mood-logs/route.js
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+import { supabaseAdmin, supabasePublic } from '@/utils/supabase'
 
 export async function POST(req) {
   try {
@@ -16,10 +10,11 @@ export async function POST(req) {
 
     const token = authHeader.split(" ")[1];
 
+    // ✅ Use anon key for auth.getUser
     const {
       data: { user },
       error: userError
-    } = await supabaseAdmin.auth.getUser(token);
+    } = await supabasePublic.auth.getUser(token);
 
     if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,7 +23,7 @@ export async function POST(req) {
     const body = await req.json();
     const { mood, note, tags } = body;
 
-
+    // ✅ Use service role for DB insert
     const { error: insertError } = await supabaseAdmin
       .from("mood_logs")
       .insert({
