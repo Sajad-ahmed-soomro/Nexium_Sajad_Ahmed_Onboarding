@@ -17,7 +17,7 @@ const SignUp = () => {
       headers: { "Content-Type": "application/json" },
     });
 
-    if (res.ok) setStatus("Magic link sent! Check your email.");
+    if (res.ok) setStatus("link sent! Check your email.");
     else setStatus("Error sending magic link.");
   };
 
