@@ -16,7 +16,7 @@ export async function POST(req) {
     const {
       data: { user },
       error: userError
-    } = await supabasePublic.auth.getUser(token);
+    } = await supabaseAdmin.auth.getUser(token);
 
     console.log("👤 Authenticated User:", user);
 
