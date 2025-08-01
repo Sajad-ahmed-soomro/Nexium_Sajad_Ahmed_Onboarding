@@ -11,7 +11,7 @@ const AboutPage = () => {
         <div className="text-2xl font-bold">MindTrack</div>
         <div className="space-x-4">
           <Link href="/" className="hover:underline">Home</Link>
-          <button className="hover:underline">Login</button>
+        
         </div>
       </nav>
 
