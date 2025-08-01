@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState,useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -13,6 +14,8 @@ const supabase = createClient(
 
 const Home = () => {
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+
 
   useEffect(() => {
     const checkSession = async () => {
@@ -32,51 +35,78 @@ const Home = () => {
     <main className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 text-gray-800">
       {/* Navbar */}
       {/* Blue Navbar */}
-      <nav className="flex justify-between items-center py-4 px-8 bg-indigo-600 text-white shadow sticky top-0 z-50">
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.5 }}
-        className="text-2xl font-bold"
-      >
-        MindTrack
-      </motion.div>
-
-      <div className="space-x-6 flex items-center">
-        {['about', 'contact'].map((path) => (
+      <nav className="py-4 px-6 bg-indigo-600 text-white shadow sticky top-0 z-50">
+        <div className="flex justify-between items-center">
           <motion.div
-            key={path}
-            whileHover={{
-              scale: 1.1,
-              color: '#c7d2fe',
-              boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
-            }}
-            transition={{ type: 'spring', stiffness: 300 }}
-            className="px-2 py-1 rounded-md"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-2xl font-bold"
           >
-            <Link href={`/${path}`} className="transition duration-200">
-              {path.charAt(0).toUpperCase() + path.slice(1)}
+            MindTrack
+          </motion.div>
+
+          {/* Hamburger for mobile */}
+          <button
+            className="md:hidden focus:outline-none"
+            onClick={() => setMenuOpen((prev) => !prev)}
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
+        <div
+          className={`${
+            menuOpen ? "block" : "hidden"
+          } md:flex md:items-center md:justify-end mt-4 md:mt-0 space-y-4 md:space-y-0 md:space-x-6`}
+        >
+          {["about", "contact"].map((path) => (
+            <motion.div
+              key={path}
+              whileHover={{
+                scale: 1.1,
+                color: "#c7d2fe",
+                boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
+              }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="px-2 py-1 rounded-md"
+            >
+              <Link href={`/${path}`} className="transition duration-200 block md:inline">
+                {path.charAt(0).toUpperCase() + path.slice(1)}
+              </Link>
+            </motion.div>
+          ))}
+
+          <motion.div
+            whileHover={{
+              scale: 1.05,
+              boxShadow: "0px 4px 16px rgba(255, 255, 255, 0.4)",
+            }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <Link
+              href="/get-started"
+              className="bg-white text-indigo-600 font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition block md:inline"
+            >
+              Login
             </Link>
           </motion.div>
-        ))}
-
-        <motion.div
-          whileHover={{
-            scale: 1.05,
-            boxShadow: '0px 4px 16px rgba(255, 255, 255, 0.4)',
-          }}
-          transition={{ type: 'spring', stiffness: 300 }}
-        >
-          <Link
-            href="/get-started"
-            className="bg-white text-indigo-600 font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition duration-200"
-          >
-            Login
-          </Link>
-        </motion.div>
-      </div>
-    </nav>
-
+        </div>
+      </nav>
 
       {/* Hero */}
       <motion.section
