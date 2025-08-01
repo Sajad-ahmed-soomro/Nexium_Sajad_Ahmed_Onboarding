@@ -6,6 +6,7 @@ MindTrack is an AI-powered mental health tracking web application designed to he
 
 Built with Next.js, Supabase, and n8n, MindTrack empowers users to track moods, reflect through journaling, and visualize mental health trends over time. It's private, secure, and built with empathy.
 
+[🌐 Live Site](https://mental-health-assistant-gilt.vercel.app/)
 ---
 
 ## ✨ Features
