@@ -45,8 +45,8 @@ const JournalAssistant = () => {
             Authorization: `Bearer ${accessToken}`,
           },
         });
-        console.log("token",accessToken)
   
+        console.log("token",accessToken)
         const data = await res.json();
         if (res.ok && Array.isArray(data)) {
           const formatted = data.flatMap((session) => {
