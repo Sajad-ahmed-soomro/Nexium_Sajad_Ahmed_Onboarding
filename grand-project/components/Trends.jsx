@@ -166,7 +166,8 @@ const Trends = () => {
           {/* AI Mood Predictions */}
           <div className="mt-10 text-center">
             <h3 className="text-xl font-semibold mb-3">AI Mood Predictions</h3>
-            <div className="flex justify-center gap-4">
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 max-w-full px-2">
+
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, i) => {
                 const moodIndex = [2, 2, 1, 0, 1, 0, 0][i];
                 const mood = ["sad", "neutral", "happy"][moodIndex];
