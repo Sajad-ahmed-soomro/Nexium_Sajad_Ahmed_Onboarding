@@ -8,9 +8,23 @@ const AboutPage = () => {
     <main className="min-h-screen bg-white text-gray-800">
       {/* Navbar */}
       <nav className="flex justify-between items-center py-4 px-8 bg-indigo-600 text-white shadow sticky top-0 z-50">
-        <div className="text-2xl font-bold">MindTrack</div>
-        <div className="space-x-4">
-          <Link href="/" className="hover:underline">Home</Link>
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.5 }}
+          className="text-2xl font-bold"
+        >
+          MindTrack
+        </motion.div>
+
+        <div className="space-x-6 flex items-center">
+          <motion.div
+            whileHover={{ scale: 1.1, color: "#c7d2fe", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className="px-2 py-1 rounded-md"
+          >
+            <Link href="/">Home</Link>
+          </motion.div>
         
         </div>
       </nav>
