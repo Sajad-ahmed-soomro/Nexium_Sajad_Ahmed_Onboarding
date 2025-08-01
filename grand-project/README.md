@@ -23,7 +23,7 @@ Built with Next.js, Supabase, and n8n, MindTrack empowers users to track moods, 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js (App Router), Tailwind CSS, ShadCN UI, Framer Motion
-- **Backend**: Supabase (PostgreSQL, Auth), MongoDB (optional for journaling),Redis(for caching)
+- **Backend**: Supabase (PostgreSQL, Auth), MongoDB (optional for journaling),Redis (for caching)
 - **AI Services**: n8n (self-hosted), Grok/OpenAI (via API workflows)
 - **Deployment**: Vercel (Frontend), Supabase (Backend), Ubuntu Server (n8n)
 
