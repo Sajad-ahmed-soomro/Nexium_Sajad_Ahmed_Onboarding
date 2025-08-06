@@ -46,8 +46,8 @@ const JournalAssistant = () => {
           },
         });
   
-        console.log("token",accessToken)
         const data = await res.json();
+      
         if (res.ok && Array.isArray(data)) {
           const formatted = data.flatMap((session) => {
             const msgs = [];
@@ -69,7 +69,7 @@ const JournalAssistant = () => {
         
             return msgs;
           });
-        
+          console.log("data formate",data)
           setMessages(formatted);
         }
         

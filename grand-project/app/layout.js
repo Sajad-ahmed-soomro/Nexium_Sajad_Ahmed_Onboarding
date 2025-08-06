@@ -1,6 +1,6 @@
 import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
-import Providers from "../components/Provider"; // we'll create this
+import Providers from "../components/Provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +13,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Your App",
+  title: "MindTrack",
   description: "Mental Health Tracker",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+    other: [
+      {
+        rel: "icon",
+        url: "/favicon-16x16.png",
+        sizes: "16x16",
+      },
+      {
+        rel: "icon",
+        url: "/favicon-32x32.png",
+        sizes: "32x32",
+      },
+      {
+        rel: "manifest",
+        url: "/site.webmanifest",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({ children }) {
