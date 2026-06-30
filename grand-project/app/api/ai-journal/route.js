@@ -1,8 +1,8 @@
-// app/api/ai-journal/route.ts
+// app/api/ai-journal/route.js
 
-import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
-import { redis } from '../../lib/redis';
+import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
+import { redis } from "../../lib/redis";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -16,19 +16,19 @@ const TTL_SECONDS = 3600;
 const entryCacheKey = (userId) => `journal:entry:${userId}`;
 const sessionsCacheKey = (userId) => `journal:sessions:${userId}`;
 
-// POST: Save journal entry + AI response (with Redis caching)
+// POST: Save journal entry + AI response
 export async function POST(req) {
   try {
-    const authHeader = req.headers.get('Authorization');
-    console.log("🔐 POST - Incoming Authorization Header:", authHeader);
+    const authHeader = req.headers.get("Authorization");
 
-    if (!authHeader?.startsWith('Bearer ')) {
-      console.warn("❌ POST - Missing or invalid Bearer token");
-      return NextResponse.json({ error: 'Missing or invalid token' }, { status: 401 });
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "Missing or invalid token" },
+        { status: 401 }
+      );
     }
 
-    const token = authHeader.split(' ')[1];
-    console.log("🧪 POST - Extracted token (partial):", token.slice(0, 10) + "...");
+    const token = authHeader.split(" ")[1];
 
     const {
       data: { user },
@@ -36,71 +36,131 @@ export async function POST(req) {
     } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !user) {
-      console.error("❌ POST - Supabase user fetch error:", userError);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
-
-    console.log("✅ POST - Authenticated user:", user.id);
 
     const { entry } = await req.json();
+
     const cacheKey = entryCacheKey(user.id);
 
-    // Check Redis cache
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      console.log("📦 POST - Returned cached response for:", user.id);
-      return NextResponse.json(cached);
+    // Try Redis cache (optional)
+    if (redis) {
+      try {
+        const cached = await redis.get(cacheKey);
+
+        if (cached) {
+          console.log("📦 Returning cached response");
+          return NextResponse.json(cached);
+        }
+      } catch (err) {
+        console.warn("⚠️ Redis unavailable:", err.message);
+      }
     }
 
-    // Get AI response from n8n
+    // Ensure env variable exists
+    if (!process.env.AI_HEALTH_ASSISTANT) {
+      throw new Error(
+        "AI_HEALTH_ASSISTANT environment variable is not configured"
+      );
+    }
+
+    // Call n8n
     const aiRes = await fetch(process.env.AI_HEALTH_ASSISTANT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entry, sessionid: user.id }),
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        entry,
+        sessionId: user.id,
+      }),
     });
 
-    if (!aiRes.ok) throw new Error('n8n webhook failed');
-    const { summary, questions } = await aiRes.json();
+    if (!aiRes.ok) {
+  const errorText = await aiRes.text();
 
+  console.error("n8n status:", aiRes.status);
+  console.error("n8n response:", errorText);
+
+  throw new Error(
+    `n8n webhook failed (${aiRes.status}): ${errorText}`
+  );
+}
+
+    // const { summary, questions } = await aiRes.json();
+    // console.log("✅ n8n response:", { summary, questions });
+
+//     const raw = await aiRes.json();
+// console.log("RAW N8N RESPONSE:", JSON.stringify(raw, null, 2));
+// const { summary, questions } = raw;
+
+const raw = await aiRes.json();
+const { summary, questions } = Array.isArray(raw) ? raw[0] : raw;
     // Save in Supabase
-    const { error: insertError } = await supabaseAdmin.from('chat_sessions').insert({
-      user_id: user.id,
-      entry,
-      summary,
-      questions,
-    });
+    const { error: insertError } = await supabaseAdmin
+      .from("chat_sessions")
+      .insert({
+        user_id: user.id,
+        entry,
+        summary,
+        questions,
+      });
 
     if (insertError) {
-      console.error('❌ POST - Supabase insert error:', insertError);
-      return NextResponse.json({ error: 'DB insert failed' }, { status: 500 });
+      console.error(insertError);
+      return NextResponse.json(
+        { error: "DB insert failed" },
+        { status: 500 }
+      );
     }
 
-    const responsePayload = { summary, questions };
+    const responsePayload = {
+      summary,
+      questions,
+    };
 
-    // Cache this response
-    await redis.set(cacheKey, responsePayload, { ex: TTL_SECONDS });
-    console.log(`[🧊 REDIS] POST - Cached new entry for user: ${user.id}`);
+    // Cache response (optional)
+    if (redis) {
+      try {
+        await redis.set(cacheKey, responsePayload, {
+          ex: TTL_SECONDS,
+        });
+      } catch (err) {
+        console.warn("⚠️ Redis unavailable:", err.message);
+      }
+    }
 
     return NextResponse.json(responsePayload);
   } catch (err) {
-    console.error('🔥 POST - Error in ai-journal:', err);
-    return NextResponse.json({ error: 'AI processing failed' }, { status: 500 });
+    console.error("🔥 POST Error:", err);
+
+    return NextResponse.json(
+      {
+        error: err.message || "AI processing failed",
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }
 
-// GET: Retrieve all past journal sessions (with optional Redis cache)
+// GET: Retrieve journal sessions
 export async function GET(req) {
   try {
-    const authHeader = req.headers.get('Authorization');
-    console.log("🔐 GET - Incoming Authorization Header:", authHeader);
+    const authHeader = req.headers.get("Authorization");
 
-    if (!authHeader?.startsWith('Bearer ')) {
-      console.warn("❌ GET - Missing or invalid Bearer token");
-      return NextResponse.json({ error: 'Missing or invalid token' }, { status: 401 });
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "Missing or invalid token" },
+        { status: 401 }
+      );
     }
 
-    const token = authHeader.split(' ')[1];
-    console.log("🧪 GET - Extracted token (partial):", token.slice(0, 10) + "...");
+    const token = authHeader.split(" ")[1];
 
     const {
       data: { user },
@@ -108,40 +168,65 @@ export async function GET(req) {
     } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !user) {
-      console.error("❌ GET - Supabase user fetch error:", userError);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    console.log("✅ GET - Authenticated user:", user.id);
-
     const cacheKey = sessionsCacheKey(user.id);
-    const cachedSessions = await redis.get(cacheKey);
 
-    if (cachedSessions) {
-      console.log("📦 GET - Returned cached sessions for:", user.id);
-      console.log("🚀 GET - Final response sent to frontend:", cachedSessions);
-      return NextResponse.json(cachedSessions);
+    // Try Redis cache (optional)
+    if (redis) {
+      try {
+        const cachedSessions = await redis.get(cacheKey);
+
+        if (cachedSessions) {
+          console.log("📦 Returning cached sessions");
+          return NextResponse.json(cachedSessions);
+        }
+      } catch (err) {
+        console.warn("⚠️ Redis unavailable:", err.message);
+      }
     }
 
     const { data, error } = await supabaseAdmin
-      .from('chat_sessions')
-      .select('entry, summary, questions, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true });
+      .from("chat_sessions")
+      .select("entry, summary, questions, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
 
     if (error) {
-      console.error('❌ GET - Supabase fetch error:', error);
-      return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
-    }
-    console.log("data formate ",data);
+      console.error(error);
 
-    await redis.set(cacheKey, data, { ex: TTL_SECONDS });
-    console.log(`[🧊 REDIS] GET - Cached sessions for user: ${user.id}`);
-    console.log("🚀 GET - Final response sent to frontend:", data);
+      return NextResponse.json(
+        { error: "Failed to fetch messages" },
+        { status: 500 }
+      );
+    }
+
+    // Cache sessions (optional)
+    if (redis) {
+      try {
+        await redis.set(cacheKey, data, {
+          ex: TTL_SECONDS,
+        });
+      } catch (err) {
+        console.warn("⚠️ Redis unavailable:", err.message);
+      }
+    }
 
     return NextResponse.json(data);
   } catch (err) {
-    console.error('🔥 GET - Error in ai-journal:', err);
-    return NextResponse.json({ error: 'Unexpected server error' }, { status: 500 });
+    console.error("🔥 GET Error:", err);
+
+    return NextResponse.json(
+      {
+        error: err.message || "Unexpected server error",
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }
